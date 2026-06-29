@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import os
+import re  # <-- Добавили для проверки телефона
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -23,6 +24,7 @@ class TradeInStates(StatesGroup):
     waiting_for_year = State()
     waiting_for_mileage = State()
     waiting_for_condition = State()
+    waiting_for_desired_car = State()  # <-- НОВОЕ СОСТОЯНИЕ
     waiting_for_contacts = State()
     waiting_for_photos = State()
 
@@ -64,20 +66,16 @@ async def process_brand(message: types.Message, state: FSMContext):
     await message.answer("📅 Какой год выпуска?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_year)
 
-# ===== ШАГ 2: Год (С ПРОВЕРКОЙ НА ЦИФРЫ) =====
+# ===== ШАГ 2: Год (С ПРОВЕРКОЙ) =====
 @dp.message(TradeInStates.waiting_for_year)
 async def process_year(message: types.Message, state: FSMContext):
     clean_text = message.text.strip()
-    
-    # Проверка 1: Только цифры
     if not clean_text.isdigit():
         await message.answer("⚠️ Пожалуйста, укажите год выпуска *только цифрами*. Например: 2018", parse_mode="Markdown")
         return
-    
-    # Проверка 2: Адекватность года
     year = int(clean_text)
     if year < 1950 or year > 2030:
-        await message.answer("⚠️ Год кажется нереалистичным. Пожалуйста, укажите корректный год (например, 2015).")
+        await message.answer("⚠️ Год кажется нереалистичным. Пожалуйста, укажите корректный год.")
         return
 
     user_data[message.from_user.id]['year'] = clean_text
@@ -87,17 +85,13 @@ async def process_year(message: types.Message, state: FSMContext):
     await message.answer("🛣️ Какой пробег (в км)?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_mileage)
 
-# ===== ШАГ 3: Пробег (С ПРОВЕРКОЙ НА ЦИФРЫ) =====
+# ===== ШАГ 3: Пробег (С ПРОВЕРКОЙ) =====
 @dp.message(TradeInStates.waiting_for_mileage)
 async def process_mileage(message: types.Message, state: FSMContext):
     clean_text = message.text.strip().replace(" ", "")
-    
-    # Проверка 1: Только цифры
     if not clean_text.isdigit():
         await message.answer("⚠️ Пожалуйста, укажите пробег *только цифрами*. Например: 150000", parse_mode="Markdown")
         return
-    
-    # Проверка 2: Адекватность пробега
     mileage = int(clean_text)
     if mileage > 2000000:
         await message.answer("⚠️ Пробег кажется слишком большим. Пожалуйста, проверьте и введите верно.")
@@ -115,7 +109,7 @@ async def process_mileage(message: types.Message, state: FSMContext):
     await message.answer("🔧 Оцените состояние авто:", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_condition)
 
-# ===== ОБРАБОТКА КНОПОК СОСТОЯНИЯ =====
+# ===== ШАГ 4: Состояние (Кнопки) =====
 @dp.callback_query(TradeInStates.waiting_for_condition, F.data.startswith("cond_"))
 async def process_condition_callback(callback: types.CallbackQuery, state: FSMContext):
     user_data[callback.from_user.id]['condition'] = CONDITIONS.get(callback.data, callback.data)
@@ -125,13 +119,45 @@ async def process_condition_callback(callback: types.CallbackQuery, state: FSMCo
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]
     ])
     
-    await callback.message.answer("📱 Оставьте контакты для связи (телефон или @username)", reply_markup=kb)
+    # <-- НОВЫЙ ШАГ: Желаемый авто
+    await callback.message.answer(
+        "🚙 Какой автомобиль вы рассматриваете для покупки взамен?\n"
+        "(Укажите марку, модель или просто пожелания)", 
+        reply_markup=kb
+    )
+    await state.set_state(TradeInStates.waiting_for_desired_car)
+
+# ===== ШАГ 5: Желаемый авто (НОВЫЙ) =====
+@dp.message(TradeInStates.waiting_for_desired_car)
+async def process_desired_car(message: types.Message, state: FSMContext):
+    user_data[message.from_user.id]['desired_car'] = message.text
+    
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_desired_car")]
+    ])
+    
+    await message.answer("📱 Оставьте номер телефона для связи (например, +79991234567)", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_contacts)
 
-# ===== ШАГ 5: Контакты =====
+# ===== ШАГ 6: Контакты (С УМНОЙ ПРОВЕРКОЙ ТЕЛЕФОНА) =====
 @dp.message(TradeInStates.waiting_for_contacts)
 async def process_contacts(message: types.Message, state: FSMContext):
-    user_data[message.from_user.id]['contacts'] = message.text
+    # Очищаем номер от всего, кроме цифр и плюса
+    clean_phone = re.sub(r'[^\d+]', '', message.text.strip())
+    digits = clean_phone.replace('+', '')
+    
+    # Форматируем номер красиво для админа
+    if len(digits) == 11 and digits.startswith('8'):
+        formatted_phone = '+7' + digits[1:]
+    elif len(digits) == 11 and digits.startswith('7'):
+        formatted_phone = '+' + digits
+    elif 10 <= len(digits) <= 15:
+        formatted_phone = clean_phone if clean_phone.startswith('+') else '+' + digits
+    else:
+        await message.answer("⚠️ Неверный формат номера. Пожалуйста, введите номер в формате +79991234567 или 89991234567")
+        return
+        
+    user_data[message.from_user.id]['contacts'] = formatted_phone
     
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="✅ Готово, отправить заявку", callback_data="finish_tradein")],
@@ -149,7 +175,7 @@ async def process_contacts(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['photos'] = []
     await state.set_state(TradeInStates.waiting_for_photos)
 
-# ===== ШАГ 6: Загрузка фото =====
+# ===== ШАГ 7: Загрузка фото =====
 @dp.message(TradeInStates.waiting_for_photos, F.photo)
 async def process_photo(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
@@ -162,7 +188,7 @@ async def process_photo(message: types.Message, state: FSMContext):
     photos_count = len(user_data[user_id]['photos'])
     await message.answer(f"✅ Фото {photos_count} получено. Отправьте еще или нажмите «Готово»")
 
-# ===== ШАГ 7: Завершение (по нажатию Inline-кнопки) =====
+# ===== ШАГ 8: Завершение =====
 @dp.callback_query(TradeInStates.waiting_for_photos, F.data == "finish_tradein")
 async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -178,11 +204,13 @@ async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMConte
         f"👤 Клиент: {callback.from_user.full_name}\n"
         f"🔗 Username: @{callback.from_user.username or 'отсутствует'}\n"
         f"🆔 ID: {callback.from_user.id}\n\n"
-        f"🚗 АВТО:\n"
+        f"🚗 ПРОДАЕТ:\n"
         f"• Марка: {data['brand']}\n"
         f"• Год: {data['year']}\n"
         f"• Пробег: {data['mileage']} км\n"
         f"• Состояние: {data['condition']}\n\n"
+        f"🚙 ХОЧЕТ КУПИТЬ:\n"
+        f"• {data.get('desired_car', 'Не указано')}\n\n"
         f"📞 Контакты: {data['contacts']}\n\n"
         f"📸 Фото: {len(data['photos'])} шт."
     )
@@ -211,18 +239,14 @@ async def back_to_brand(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_year")
 async def back_to_year(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_brand")]
-    ])
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_brand")]])
     await callback.message.answer("📅 Какой год выпуска?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_year)
 
 @dp.callback_query(F.data == "back_to_mileage")
 async def back_to_mileage(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_year")]
-    ])
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_year")]])
     await callback.message.answer("🛣️ Какой пробег (в км)?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_mileage)
 
@@ -238,13 +262,18 @@ async def back_to_condition(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.answer("🔧 Оцените состояние авто:", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_condition)
 
+@dp.callback_query(F.data == "back_to_desired_car")
+async def back_to_desired_car(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]])
+    await callback.message.answer("🚙 Какой автомобиль вы рассматриваете для покупки взамен?", reply_markup=kb)
+    await state.set_state(TradeInStates.waiting_for_desired_car)
+
 @dp.callback_query(F.data == "back_to_contacts")
 async def back_to_contacts(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]
-    ])
-    await callback.message.answer("📱 Оставьте контакты для связи (телефон или @username)", reply_markup=kb)
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_desired_car")]])
+    await callback.message.answer("📱 Оставьте номер телефона для связи (например, +79991234567)", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_contacts)
 
 # ===== ОТМЕНА ЗАЯВКИ =====
