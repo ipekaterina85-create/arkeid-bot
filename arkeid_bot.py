@@ -1,6 +1,6 @@
 import asyncio
 import logging
-import os  # <-- Добавили для чтения переменных окружения
+import os
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -8,7 +8,6 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 
 # ===== НАСТРОЙКИ =====
-# Токен теперь берется из переменных окружения Railway
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 ADMIN_CHAT_ID = 435101734
 
@@ -65,20 +64,46 @@ async def process_brand(message: types.Message, state: FSMContext):
     await message.answer("📅 Какой год выпуска?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_year)
 
-# ===== ШАГ 2: Год =====
+# ===== ШАГ 2: Год (С ПРОВЕРКОЙ НА ЦИФРЫ) =====
 @dp.message(TradeInStates.waiting_for_year)
 async def process_year(message: types.Message, state: FSMContext):
-    user_data[message.from_user.id]['year'] = message.text
+    clean_text = message.text.strip()
+    
+    # Проверка 1: Только цифры
+    if not clean_text.isdigit():
+        await message.answer("⚠️ Пожалуйста, укажите год выпуска *только цифрами*. Например: 2018", parse_mode="Markdown")
+        return
+    
+    # Проверка 2: Адекватность года
+    year = int(clean_text)
+    if year < 1950 or year > 2030:
+        await message.answer("⚠️ Год кажется нереалистичным. Пожалуйста, укажите корректный год (например, 2015).")
+        return
+
+    user_data[message.from_user.id]['year'] = clean_text
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_year")]
     ])
     await message.answer("🛣️ Какой пробег (в км)?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_mileage)
 
-# ===== ШАГ 3: Пробег -> Переход к Inline-кнопкам состояния =====
+# ===== ШАГ 3: Пробег (С ПРОВЕРКОЙ НА ЦИФРЫ) =====
 @dp.message(TradeInStates.waiting_for_mileage)
 async def process_mileage(message: types.Message, state: FSMContext):
-    user_data[message.from_user.id]['mileage'] = message.text
+    clean_text = message.text.strip().replace(" ", "")
+    
+    # Проверка 1: Только цифры
+    if not clean_text.isdigit():
+        await message.answer("⚠️ Пожалуйста, укажите пробег *только цифрами*. Например: 150000", parse_mode="Markdown")
+        return
+    
+    # Проверка 2: Адекватность пробега
+    mileage = int(clean_text)
+    if mileage > 2000000:
+        await message.answer("⚠️ Пробег кажется слишком большим. Пожалуйста, проверьте и введите верно.")
+        return
+
+    user_data[message.from_user.id]['mileage'] = clean_text
     
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="✨ Отличное", callback_data="cond_excellent")],
@@ -186,13 +211,19 @@ async def back_to_brand(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_year")
 async def back_to_year(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await callback.message.answer("📅 Какой год выпуска?")
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_brand")]
+    ])
+    await callback.message.answer("📅 Какой год выпуска?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_year)
 
 @dp.callback_query(F.data == "back_to_mileage")
 async def back_to_mileage(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await callback.message.answer("🛣️ Какой пробег (в км)?")
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_year")]
+    ])
+    await callback.message.answer("🛣️ Какой пробег (в км)?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_mileage)
 
 @dp.callback_query(F.data == "back_to_condition")
@@ -210,7 +241,10 @@ async def back_to_condition(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_contacts")
 async def back_to_contacts(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    await callback.message.answer("📱 Оставьте контакты для связи (телефон или @username)")
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]
+    ])
+    await callback.message.answer("📱 Оставьте контакты для связи (телефон или @username)", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_contacts)
 
 # ===== ОТМЕНА ЗАЯВКИ =====
