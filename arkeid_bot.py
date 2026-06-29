@@ -8,7 +8,7 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.fsm.storage.memory import MemoryStorage
 
 # ===== НАСТРОЙКИ =====
-BOT_TOKEN = os.getenv("BOT_TOKEN")  # Берем токен из переменных окружения
+BOT_TOKEN = os.getenv("BOT_TOKEN")  # Railway сам подставит токен из переменных
 ADMIN_CHAT_ID = 435101734  # Твой Telegram ID
 
 # ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -43,21 +43,18 @@ async def cmd_start(message: types.Message, state: FSMContext):
     )
     await state.set_state(TradeInStates.waiting_for_brand)
 
-# ===== ШАГ 1: Марка =====
 @dp.message(TradeInStates.waiting_for_brand)
 async def process_brand(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['brand'] = message.text
-    await message.answer("📅 Какой год выпуска?", parse_mode="Markdown")
+    await message.answer("📅 Какой год выпуска?")
     await state.set_state(TradeInStates.waiting_for_year)
 
-# ===== ШАГ 2: Год =====
 @dp.message(TradeInStates.waiting_for_year)
 async def process_year(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['year'] = message.text
-    await message.answer("🛣️ Какой пробег (в км)?", parse_mode="Markdown")
+    await message.answer("🛣️ Какой пробег (в км)?")
     await state.set_state(TradeInStates.waiting_for_mileage)
 
-# ===== ШАГ 3: Пробег =====
 @dp.message(TradeInStates.waiting_for_mileage)
 async def process_mileage(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['mileage'] = message.text
@@ -65,19 +62,16 @@ async def process_mileage(message: types.Message, state: FSMContext):
         "🔧 Опишите состояние авто:\n"
         "• Были ли ДТП?\n"
         "• Есть ли технические неисправности?\n"
-        "• В каком состоянии салон и кузов?",
-        parse_mode="Markdown"
+        "• В каком состоянии салон и кузов?"
     )
     await state.set_state(TradeInStates.waiting_for_condition)
 
-# ===== ШАГ 4: Состояние =====
 @dp.message(TradeInStates.waiting_for_condition)
 async def process_condition(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['condition'] = message.text
-    await message.answer("📱 Оставьте контакты для связи (телефон или @username)", parse_mode="Markdown")
+    await message.answer("📱 Оставьте контакты для связи (телефон или @username)")
     await state.set_state(TradeInStates.waiting_for_contacts)
 
-# ===== ШАГ 5: Контакты =====
 @dp.message(TradeInStates.waiting_for_contacts)
 async def process_contacts(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['contacts'] = message.text
@@ -87,7 +81,6 @@ async def process_contacts(message: types.Message, state: FSMContext):
         "• Салон\n"
         "• Приборная панель с пробегом\n\n"
         "Когда загрузите все фото, нажмите кнопку ✅ Готово",
-        parse_mode="Markdown",
         reply_markup=types.ReplyKeyboardMarkup(
             keyboard=[[types.KeyboardButton(text="✅ Готово")]],
             resize_keyboard=True
@@ -96,7 +89,6 @@ async def process_contacts(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['photos'] = []
     await state.set_state(TradeInStates.waiting_for_photos)
 
-# ===== ШАГ 6: Загрузка фото =====
 @dp.message(TradeInStates.waiting_for_photos, F.photo)
 async def process_photo(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
@@ -109,7 +101,6 @@ async def process_photo(message: types.Message, state: FSMContext):
     photos_count = len(user_data[user_id]['photos'])
     await message.answer(f"✅ Фото {photos_count} получено. Отправьте еще или нажмите Готово")
 
-# ===== ШАГ 7: Завершение =====
 @dp.message(TradeInStates.waiting_for_photos, F.text == "✅ Готово")
 async def finish_trade_in(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
