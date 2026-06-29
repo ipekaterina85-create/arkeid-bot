@@ -36,6 +36,15 @@ CONDITIONS = {
     "cond_repair": "🔧 Требует ремонта (есть технические неисправности)"
 }
 
+# ===== КЛАВИАТУРА ДЛЯ АДМИНА =====
+def get_admin_keyboard():
+    return types.InlineKeyboardMarkup(inline_keyboard=[
+        [
+            types.InlineKeyboardButton(text="✅ Связались", callback_data="admin_ok"),
+            types.InlineKeyboardButton(text="❌ Отказ", callback_data="admin_no")
+        ]
+    ])
+
 # ===== КОМАНДА /start =====
 @dp.message(Command("start"))
 async def cmd_start(message: types.Message, state: FSMContext):
@@ -160,7 +169,6 @@ async def process_contacts(message: types.Message, state: FSMContext):
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_contacts")]
     ])
     
-    # УБРАЛИ КНОПКУ "ГОТОВО" ОТСЮДА, чтобы она не застревала наверху
     await message.answer(
         "📸 Отправьте фото автомобиля (можно несколько):\n"
         "• Общий вид спереди и сзади\n"
@@ -172,7 +180,7 @@ async def process_contacts(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['photos'] = []
     await state.set_state(TradeInStates.waiting_for_photos)
 
-# ===== ШАГ 7: Загрузка фото (КНОПКА ПЕРЕЕЗЖАЕТ СЮДА) =====
+# ===== ШАГ 7: Загрузка фото =====
 @dp.message(TradeInStates.waiting_for_photos, F.photo)
 async def process_photo(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
@@ -184,18 +192,16 @@ async def process_photo(message: types.Message, state: FSMContext):
 
     photos_count = len(user_data[user_id]['photos'])
     
-    # Создаем кнопку "Готово", которая будет прикрепляться к каждому ответу
     kb_finish = types.InlineKeyboardMarkup(inline_keyboard=[
         [types.InlineKeyboardButton(text="✅ Готово, отправить заявку", callback_data="finish_tradein")]
     ])
     
-    # Отвечаем на фото и прикрепляем кнопку снизу
     await message.answer(
         f"✅ Фото {photos_count} получено. Отправьте еще или нажмите кнопку ниже.",
         reply_markup=kb_finish
     )
 
-# ===== ШАГ 8: Завершение =====
+# ===== ШАГ 8: Завершение и отправка админу =====
 @dp.callback_query(TradeInStates.waiting_for_photos, F.data == "finish_tradein")
 async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
@@ -222,9 +228,16 @@ async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMConte
         f"📸 Фото: {len(data['photos'])} шт."
     )
 
-    await bot.send_message(ADMIN_CHAT_ID, application_text)
+    # Отправляем фото админу
     for photo_id in data['photos']:
         await bot.send_photo(ADMIN_CHAT_ID, photo_id)
+
+    # Отправляем текст заявки админу С КНОПКАМИ
+    await bot.send_message(
+        ADMIN_CHAT_ID, 
+        application_text, 
+        reply_markup=get_admin_keyboard()
+    )
 
     await callback.message.answer(
         "✅ *Спасибо! Ваша заявка принята.*\n\n"
@@ -235,6 +248,41 @@ async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMConte
 
     await state.clear()
     user_data[user_id] = {}
+
+# ===== ОБРАБОТКА КНОПОК АДМИНА =====
+@dp.callback_query(F.data.in_({"admin_ok", "admin_no"}))
+async def process_admin_actions(callback: types.CallbackQuery):
+    # Проверка: нажал ли именно админ?
+    if callback.from_user.id != ADMIN_CHAT_ID:
+        await callback.answer("⛔ У вас нет прав для этого действия", show_alert=True)
+        return
+
+    current_text = callback.message.text
+    
+    # Определяем новый статус
+    if callback.data == "admin_ok":
+        status_text = "✅ В РАБОТЕ (Связались)"
+    else:
+        status_text = "❌ ОТКАЗ"
+
+    # Если статус уже был обновлен, удаляем старую строку, чтобы не дублировать
+    if "📊 СТАТУС:" in current_text:
+        current_text = current_text.split("📊 СТАТУС:")[0].strip()
+
+    new_text = f"{current_text}\n\n📊 СТАТУС: {status_text}"
+    
+    # Делаем кнопку неактивной (меняем текст и ставим пустой callback)
+    final_kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text=status_text, callback_data="admin_done")]
+    ])
+
+    await callback.message.edit_text(new_text, reply_markup=final_kb)
+    await callback.answer("Статус заявки обновлен!")
+
+# Обработчик для неактивной кнопки (чтобы Telegram не ругался)
+@dp.callback_query(F.data == "admin_done")
+async def process_admin_done(callback: types.CallbackQuery):
+    await callback.answer("Заявка уже обработана")
 
 # ===== НАВИГАЦИЯ "НАЗАД" =====
 @dp.callback_query(F.data == "back_to_brand")
