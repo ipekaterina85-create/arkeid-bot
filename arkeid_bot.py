@@ -412,7 +412,13 @@ async def cancel_process(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     user_data.pop(callback.from_user.id, None)
     await callback.message.edit_text("❌ Заявка отменена. Нажмите /start, если передумаете")
-
+# ===== ЗАЩИТА ОТ УСТАРЕВШИХ КНОПОК =====
+@dp.callback_query()
+async def unknown_callback(callback: types.CallbackQuery):
+    await callback.answer()
+    await callback.message.answer(
+        "⚠️ Эта кнопка устарела. Пожалуйста, начните заново: нажмите /start"
+    )
 async def main():
     await dp.start_polling(bot)
 
