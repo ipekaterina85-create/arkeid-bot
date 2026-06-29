@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import os
-import re  # <-- Добавили для проверки телефона
+import re
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
@@ -24,7 +24,7 @@ class TradeInStates(StatesGroup):
     waiting_for_year = State()
     waiting_for_mileage = State()
     waiting_for_condition = State()
-    waiting_for_desired_car = State()  # <-- НОВОЕ СОСТОЯНИЕ
+    waiting_for_desired_car = State()
     waiting_for_contacts = State()
     waiting_for_photos = State()
 
@@ -66,7 +66,7 @@ async def process_brand(message: types.Message, state: FSMContext):
     await message.answer("📅 Какой год выпуска?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_year)
 
-# ===== ШАГ 2: Год (С ПРОВЕРКОЙ) =====
+# ===== ШАГ 2: Год =====
 @dp.message(TradeInStates.waiting_for_year)
 async def process_year(message: types.Message, state: FSMContext):
     clean_text = message.text.strip()
@@ -85,7 +85,7 @@ async def process_year(message: types.Message, state: FSMContext):
     await message.answer("🛣️ Какой пробег (в км)?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_mileage)
 
-# ===== ШАГ 3: Пробег (С ПРОВЕРКОЙ) =====
+# ===== ШАГ 3: Пробег =====
 @dp.message(TradeInStates.waiting_for_mileage)
 async def process_mileage(message: types.Message, state: FSMContext):
     clean_text = message.text.strip().replace(" ", "")
@@ -109,7 +109,7 @@ async def process_mileage(message: types.Message, state: FSMContext):
     await message.answer("🔧 Оцените состояние авто:", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_condition)
 
-# ===== ШАГ 4: Состояние (Кнопки) =====
+# ===== ШАГ 4: Состояние =====
 @dp.callback_query(TradeInStates.waiting_for_condition, F.data.startswith("cond_"))
 async def process_condition_callback(callback: types.CallbackQuery, state: FSMContext):
     user_data[callback.from_user.id]['condition'] = CONDITIONS.get(callback.data, callback.data)
@@ -119,7 +119,6 @@ async def process_condition_callback(callback: types.CallbackQuery, state: FSMCo
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]
     ])
     
-    # <-- НОВЫЙ ШАГ: Желаемый авто
     await callback.message.answer(
         "🚙 Какой автомобиль вы рассматриваете для покупки взамен?\n"
         "(Укажите марку, модель или просто пожелания)", 
@@ -127,7 +126,7 @@ async def process_condition_callback(callback: types.CallbackQuery, state: FSMCo
     )
     await state.set_state(TradeInStates.waiting_for_desired_car)
 
-# ===== ШАГ 5: Желаемый авто (НОВЫЙ) =====
+# ===== ШАГ 5: Желаемый авто =====
 @dp.message(TradeInStates.waiting_for_desired_car)
 async def process_desired_car(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['desired_car'] = message.text
@@ -139,14 +138,12 @@ async def process_desired_car(message: types.Message, state: FSMContext):
     await message.answer("📱 Оставьте номер телефона для связи (например, +79991234567)", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_contacts)
 
-# ===== ШАГ 6: Контакты (С УМНОЙ ПРОВЕРКОЙ ТЕЛЕФОНА) =====
+# ===== ШАГ 6: Контакты =====
 @dp.message(TradeInStates.waiting_for_contacts)
 async def process_contacts(message: types.Message, state: FSMContext):
-    # Очищаем номер от всего, кроме цифр и плюса
     clean_phone = re.sub(r'[^\d+]', '', message.text.strip())
     digits = clean_phone.replace('+', '')
     
-    # Форматируем номер красиво для админа
     if len(digits) == 11 and digits.startswith('8'):
         formatted_phone = '+7' + digits[1:]
     elif len(digits) == 11 and digits.startswith('7'):
@@ -160,22 +157,22 @@ async def process_contacts(message: types.Message, state: FSMContext):
     user_data[message.from_user.id]['contacts'] = formatted_phone
     
     kb = types.InlineKeyboardMarkup(inline_keyboard=[
-        [types.InlineKeyboardButton(text="✅ Готово, отправить заявку", callback_data="finish_tradein")],
         [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_contacts")]
     ])
     
+    # УБРАЛИ КНОПКУ "ГОТОВО" ОТСЮДА, чтобы она не застревала наверху
     await message.answer(
         "📸 Отправьте фото автомобиля (можно несколько):\n"
         "• Общий вид спереди и сзади\n"
         "• Салон\n"
         "• Приборная панель с пробегом\n\n"
-        "Когда загрузите все фото, нажмите кнопку ниже.",
+        "Отправьте первое фото, а кнопка «Готово» будет появляться после каждого фото.",
         reply_markup=kb
     )
     user_data[message.from_user.id]['photos'] = []
     await state.set_state(TradeInStates.waiting_for_photos)
 
-# ===== ШАГ 7: Загрузка фото =====
+# ===== ШАГ 7: Загрузка фото (КНОПКА ПЕРЕЕЗЖАЕТ СЮДА) =====
 @dp.message(TradeInStates.waiting_for_photos, F.photo)
 async def process_photo(message: types.Message, state: FSMContext):
     user_id = message.from_user.id
@@ -186,7 +183,17 @@ async def process_photo(message: types.Message, state: FSMContext):
     user_data[user_id]['photos'].append(photo.file_id)
 
     photos_count = len(user_data[user_id]['photos'])
-    await message.answer(f"✅ Фото {photos_count} получено. Отправьте еще или нажмите «Готово»")
+    
+    # Создаем кнопку "Готово", которая будет прикрепляться к каждому ответу
+    kb_finish = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="✅ Готово, отправить заявку", callback_data="finish_tradein")]
+    ])
+    
+    # Отвечаем на фото и прикрепляем кнопку снизу
+    await message.answer(
+        f"✅ Фото {photos_count} получено. Отправьте еще или нажмите кнопку ниже.",
+        reply_markup=kb_finish
+    )
 
 # ===== ШАГ 8: Завершение =====
 @dp.callback_query(TradeInStates.waiting_for_photos, F.data == "finish_tradein")
