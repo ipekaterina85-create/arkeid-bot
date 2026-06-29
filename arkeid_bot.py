@@ -14,13 +14,11 @@ ADMIN_CHAT_ID = int(os.getenv("ADMIN_CHAT_ID", "435101734"))
 DEFAULT_BASE_PRICE = 1500000
 
 # ===== БАЗА ЦЕН С УЧЁТОМ ГОДА ВЫПУСКА =====
-# Формат: "марка": {"диапазон_годов": цена}
 BRAND_PRICES = {
     # Российские
     "lada": {"2020-2026": 1800000, "2015-2019": 1200000, "2010-2014": 800000, "2005-2009": 500000, "до_2004": 300000},
     "ваз": {"2020-2026": 1800000, "2015-2019": 1200000, "2010-2014": 800000, "2005-2009": 500000, "до_2004": 300000},
     "уаз": {"2020-2026": 2000000, "2015-2019": 1400000, "2010-2014": 1000000, "2005-2009": 700000, "до_2004": 400000},
-    
     # Китайские
     "haval": {"2020-2026": 2800000, "2015-2019": 1800000, "2010-2014": 1200000, "2005-2009": 800000, "до_2004": 500000},
     "хавейл": {"2020-2026": 2800000, "2015-2019": 1800000, "2010-2014": 1200000, "2005-2009": 800000, "до_2004": 500000},
@@ -36,7 +34,6 @@ BRAND_PRICES = {
     "танк": {"2020-2026": 3800000, "2015-2019": 2600000, "2010-2014": 1800000, "2005-2009": 1200000, "до_2004": 700000},
     "zeekr": {"2020-2026": 4200000, "2015-2019": 2800000, "2010-2014": 2000000, "2005-2009": 1300000, "до_2004": 800000},
     "зикер": {"2020-2026": 4200000, "2015-2019": 2800000, "2010-2014": 2000000, "2005-2009": 1300000, "до_2004": 800000},
-    
     # Корейские
     "hyundai": {"2020-2026": 2600000, "2015-2019": 1800000, "2010-2014": 1200000, "2005-2009": 800000, "до_2004": 500000},
     "хендай": {"2020-2026": 2600000, "2015-2019": 1800000, "2010-2014": 1200000, "2005-2009": 800000, "до_2004": 500000},
@@ -44,7 +41,6 @@ BRAND_PRICES = {
     "киа": {"2020-2026": 2700000, "2015-2019": 1900000, "2010-2014": 1300000, "2005-2009": 850000, "до_2004": 550000},
     "genesis": {"2020-2026": 5200000, "2015-2019": 3800000, "2010-2014": 2600000, "2005-2009": 1800000, "до_2004": 1100000},
     "генезис": {"2020-2026": 5200000, "2015-2019": 3800000, "2010-2014": 2600000, "2005-2009": 1800000, "до_2004": 1100000},
-    
     # Японские
     "toyota": {"2020-2026": 3500000, "2015-2019": 2400000, "2010-2014": 1600000, "2005-2009": 1100000, "до_2004": 700000},
     "тойота": {"2020-2026": 3500000, "2015-2019": 2400000, "2010-2014": 1600000, "2005-2009": 1100000, "до_2004": 700000},
@@ -60,7 +56,6 @@ BRAND_PRICES = {
     "субару": {"2020-2026": 3200000, "2015-2019": 2300000, "2010-2014": 1500000, "2005-2009": 1050000, "до_2004": 650000},
     "lexus": {"2020-2026": 5000000, "2015-2019": 3500000, "2010-2014": 2400000, "2005-2009": 1600000, "до_2004": 1000000},
     "лексус": {"2020-2026": 5000000, "2015-2019": 3500000, "2010-2014": 2400000, "2005-2009": 1600000, "до_2004": 1000000},
-    
     # Немецкие
     "volkswagen": {"2020-2026": 2800000, "2015-2019": 1900000, "2010-2014": 1300000, "2005-2009": 850000, "до_2004": 550000},
     "фольксваген": {"2020-2026": 2800000, "2015-2019": 1900000, "2010-2014": 1300000, "2005-2009": 850000, "до_2004": 550000},
@@ -77,7 +72,6 @@ BRAND_PRICES = {
     "порше": {"2020-2026": 8500000, "2015-2019": 6200000, "2010-2014": 4200000, "2005-2009": 2900000, "до_2004": 1800000},
     "volvo": {"2020-2026": 3600000, "2015-2019": 2600000, "2010-2014": 1750000, "2005-2009": 1200000, "до_2004": 750000},
     "вольво": {"2020-2026": 3600000, "2015-2019": 2600000, "2010-2014": 1750000, "2005-2009": 1200000, "до_2004": 750000},
-    
     # Американские
     "ford": {"2020-2026": 2500000, "2015-2019": 1750000, "2010-2014": 1200000, "2005-2009": 800000, "до_2004": 500000},
     "форд": {"2020-2026": 2500000, "2015-2019": 1750000, "2010-2014": 1200000, "2005-2009": 800000, "до_2004": 500000},
@@ -87,7 +81,6 @@ BRAND_PRICES = {
     "джип": {"2020-2026": 4200000, "2015-2019": 3000000, "2010-2014": 2050000, "2005-2009": 1400000, "до_2004": 850000},
     "tesla": {"2020-2026": 6000000, "2015-2019": 4300000, "2010-2014": 3000000, "2005-2009": 2000000, "до_2004": 1200000},
     "тесла": {"2020-2026": 6000000, "2015-2019": 4300000, "2010-2014": 3000000, "2005-2009": 2000000, "до_2004": 1200000},
-    
     # Французские
     "renault": {"2020-2026": 2100000, "2015-2019": 1450000, "2010-2014": 1000000, "2005-2009": 650000, "до_2004": 400000},
     "рено": {"2020-2026": 2100000, "2015-2019": 1450000, "2010-2014": 1000000, "2005-2009": 650000, "до_2004": 400000},
@@ -95,7 +88,6 @@ BRAND_PRICES = {
     "пежо": {"2020-2026": 2300000, "2015-2019": 1600000, "2010-2014": 1100000, "2005-2009": 700000, "до_2004": 450000},
     "citroen": {"2020-2026": 2200000, "2015-2019": 1550000, "2010-2014": 1050000, "2005-2009": 680000, "до_2004": 420000},
     "ситроен": {"2020-2026": 2200000, "2015-2019": 1550000, "2010-2014": 1050000, "2005-2009": 680000, "до_2004": 420000},
-    
     # Британские
     "land rover": {"2020-2026": 6500000, "2015-2019": 4700000, "2010-2014": 3200000, "2005-2009": 2200000, "до_2004": 1300000},
     "ленд ровер": {"2020-2026": 6500000, "2015-2019": 4700000, "2010-2014": 3200000, "2005-2009": 2200000, "до_2004": 1300000},
@@ -103,7 +95,6 @@ BRAND_PRICES = {
     "рэйндж ровер": {"2020-2026": 8200000, "2015-2019": 5900000, "2010-2014": 4000000, "2005-2009": 2800000, "до_2004": 1700000},
     "jaguar": {"2020-2026": 5300000, "2015-2019": 3800000, "2010-2014": 2600000, "2005-2009": 1800000, "до_2004": 1100000},
     "ягуар": {"2020-2026": 5300000, "2015-2019": 3800000, "2010-2014": 2600000, "2005-2009": 1800000, "до_2004": 1100000},
-    
     # Итальянские
     "lamborghini": {"2020-2026": 25000000, "2015-2019": 18000000, "2010-2014": 12500000, "2005-2009": 8500000, "до_2004": 5500000},
     "ламборгини": {"2020-2026": 25000000, "2015-2019": 18000000, "2010-2014": 12500000, "2005-2009": 8500000, "до_2004": 5500000},
@@ -111,17 +102,8 @@ BRAND_PRICES = {
     "феррари": {"2020-2026": 28000000, "2015-2019": 20000000, "2010-2014": 14000000, "2005-2009": 9500000, "до_2004": 6000000},
 }
 
-# ===== ФУНКЦИЯ ПОИСКА БАЗОВОЙ ЦЕНЫ С УЧЁТОМ ГОДА =====
 def get_base_price(brand_text: str, year: int) -> int:
-    """
-    Ищет марку в словаре и возвращает цену для соответствующего диапазона годов.
-    Примеры:
-    - get_base_price("BMW", 2013) → 2200000 (диапазон 2010-2014)
-    - get_base_price("Toyota", 2020) → 3500000 (диапазон 2020-2026)
-    """
     brand_lower = brand_text.lower().strip()
-    
-    # Определяем диапазон годов
     if year >= 2020:
         year_range = "2020-2026"
     elif year >= 2015:
@@ -132,38 +114,22 @@ def get_base_price(brand_text: str, year: int) -> int:
         year_range = "2005-2009"
     else:
         year_range = "до_2004"
-    
-    # 1. Точное совпадение марки
     if brand_lower in BRAND_PRICES:
         return BRAND_PRICES[brand_lower].get(year_range, DEFAULT_BASE_PRICE)
-    
-    # 2. Частичное совпадение (например, "BMW X5" → "bmw")
     for brand_key, prices in BRAND_PRICES.items():
         if brand_key in brand_lower:
             return prices.get(year_range, DEFAULT_BASE_PRICE)
-    
-    # 3. Если ничего не нашли
     return DEFAULT_BASE_PRICE
 
-# ===== УПРОЩЁННАЯ ФУНКЦИЯ РАСЧЕТА СТОИМОСТИ =====
 def calculate_price(brand, year, mileage, condition):
-    # Базовая цена уже учитывает год выпуска
     base_price = get_base_price(brand, int(year))
-    
-    # Коэффициент пробега (теряет цену с пробегом, минимум 50% от базы)
-    mileage_coeff = max(0.5, 1.0 - (int(mileage) / 600000))
-    
-    # Коэффициент состояния
+    # 🔥 ИЗМЕНЕНО: влияние пробега уменьшено в 5 раз (делим на 3 000 000 вместо 600 000)
+    mileage_coeff = max(0.8, 1.0 - (int(mileage) / 3000000))
     cond_map = {"cond_excellent": 1.0, "cond_good": 0.85, "cond_repair": 0.65}
     cond_coeff = cond_map.get(condition, 0.8)
-    
-    # Итоговая цена
     raw_price = base_price * mileage_coeff * cond_coeff
-    
-    # Диапазон +/- 10%
     min_p = int(raw_price * 0.9)
     max_p = int(raw_price * 1.1)
-    
     return f"{min_p:,}".replace(",", " "), f"{max_p:,}".replace(",", " ")
 
 # ===== ИНИЦИАЛИЗАЦИЯ =====
@@ -244,9 +210,23 @@ async def process_mileage(message: types.Message, state: FSMContext):
 async def process_condition_callback(callback: types.CallbackQuery, state: FSMContext):
     user_data[callback.from_user.id]['condition'] = callback.data
     await callback.answer()
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]])
+    
+    # 🔥 ДОБАВЛЕНА КНОПКА "Только выкуп"
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="🚫 Только выкуп (не рассматриваю покупку)", callback_data="only_buyout")],
+        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]
+    ])
     await callback.message.answer("🚙 Какой автомобиль вы рассматриваете для покупки взамен?\n(Укажите марку, модель или пожелания)", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_desired_car)
+
+# 🔥 НОВЫЙ ОБРАБОТЧИК: Кнопка "Только выкуп"
+@dp.callback_query(TradeInStates.waiting_for_desired_car, F.data == "only_buyout")
+async def process_only_buyout(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    user_data[callback.from_user.id]['desired_car'] = "Только выкуп"
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_desired_car")]])
+    await callback.message.answer("📱 Оставьте номер телефона (например, +79991234567)", reply_markup=kb)
+    await state.set_state(TradeInStates.waiting_for_contacts)
 
 @dp.message(TradeInStates.waiting_for_desired_car)
 async def process_desired_car(message: types.Message, state: FSMContext):
@@ -330,7 +310,12 @@ async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMConte
         for photo_id in data['photos']:
             await bot.send_photo(ADMIN_CHAT_ID, photo_id)
         await bot.send_message(ADMIN_CHAT_ID, application_text, reply_markup=get_admin_keyboard())
-        await callback.message.answer(client_text, parse_mode="Markdown")
+        
+        # 🔥 ДОБАВЛЕНА КНОПКА "Новая заявка"
+        kb_restart = types.InlineKeyboardMarkup(inline_keyboard=[
+            [types.InlineKeyboardButton(text="🔄 Новая заявка", callback_data="restart")]
+        ])
+        await callback.message.answer(client_text, parse_mode="Markdown", reply_markup=kb_restart)
         logging.info(f"✅ Заявка успешно отправлена от пользователя {user_id}")
 
     except Exception as e:
@@ -341,6 +326,16 @@ async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMConte
     finally:
         await state.clear()
         user_data.pop(user_id, None)
+
+# 🔥 НОВЫЙ ОБРАБОТЧИК: Кнопка "Новая заявка"
+@dp.callback_query(F.data == "restart")
+async def process_restart(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()
+    user_data[callback.from_user.id] = {}
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_process")]])
+    await callback.message.answer("🚗 *Trade-In от ARKEID*\n\nХотите быстро и выгодно продать свой автомобиль?\nЗаполните короткую анкету, и наш менеджер свяжется с вами в течение 15 минут!\n\nНачнем? Какая *марка и модель* вашего авто?", parse_mode="Markdown", reply_markup=kb)
+    await state.set_state(TradeInStates.waiting_for_brand)
 
 @dp.callback_query(F.data.in_({"admin_ok", "admin_no"}))
 async def process_admin_actions(callback: types.CallbackQuery):
@@ -395,7 +390,10 @@ async def back_to_condition(callback: types.CallbackQuery, state: FSMContext):
 @dp.callback_query(F.data == "back_to_desired_car")
 async def back_to_desired_car(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
-    kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]])
+    kb = types.InlineKeyboardMarkup(inline_keyboard=[
+        [types.InlineKeyboardButton(text="🚫 Только выкуп (не рассматриваю покупку)", callback_data="only_buyout")],
+        [types.InlineKeyboardButton(text="⬅️ Назад", callback_data="back_to_condition")]
+    ])
     await callback.message.answer("🚙 Какой автомобиль рассматриваете для покупки взамен?", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_desired_car)
 
@@ -412,13 +410,13 @@ async def cancel_process(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     user_data.pop(callback.from_user.id, None)
     await callback.message.edit_text("❌ Заявка отменена. Нажмите /start, если передумаете")
+
 # ===== ЗАЩИТА ОТ УСТАРЕВШИХ КНОПОК =====
 @dp.callback_query()
 async def unknown_callback(callback: types.CallbackQuery):
     await callback.answer()
-    await callback.message.answer(
-        "⚠️ Эта кнопка устарела. Пожалуйста, начните заново: нажмите /start"
-    )
+    await callback.message.answer("⚠️ Эта кнопка устарела. Пожалуйста, начните заново: нажмите /start")
+
 async def main():
     await dp.start_polling(bot)
 
