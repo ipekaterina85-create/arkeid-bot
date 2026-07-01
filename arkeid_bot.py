@@ -418,7 +418,7 @@ async def cmd_start(message: types.Message, state: FSMContext):
     await state.clear()
     user_data[message.from_user.id] = {}
     kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_process")]])
-    await message.answer("🚗 *Trade-In от ARKEID*\n\nХотите быстро и выгодно продать свой автомобиль?\nЗаполните короткую анкету, и наш менеджер свяжется с вами в течение 15 минут!\n\nНачнем? Какая *марка и модель* вашего авто?", parse_mode="Markdown", reply_markup=kb)
+    await message.answer("🚗 *Trade-In от ARKEID*\n\nХотите быстро и выгодно продать свой автомобиль?\nЗаполните короткую анкету, и наш менеджер свяжется с вами в ближайшее время!\n\nНачнем? Какая *марка и модель* вашего авто?", parse_mode="Markdown", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_brand)
 
 @dp.message(TradeInStates.waiting_for_brand)
@@ -531,7 +531,7 @@ async def finish_tradein_callback(callback: types.CallbackQuery, state: FSMConte
             f"💰 *Предварительная оценка вашего авто:*\n"
             f"от {min_price} ₽ до {max_price} ₽\n\n"
             f"⚠️ _Это алгоритмическая оценка на основе средних рыночных данных. Точную стоимость Trade-In наш эксперт назовет после осмотра._\n\n"
-            f"Наш менеджер свяжется с вами в течение 15 минут.\n"
+            f"Наш менеджер свяжется с вами в ближайшее время.\n"
             f"ARKEID — быстрый и безопасный выкуп авто!"
         )
         application_text = (
@@ -569,7 +569,7 @@ async def process_restart(callback: types.CallbackQuery, state: FSMContext):
     await state.clear()
     user_data[callback.from_user.id] = {}
     kb = types.InlineKeyboardMarkup(inline_keyboard=[[types.InlineKeyboardButton(text="❌ Отмена", callback_data="cancel_process")]])
-    await callback.message.answer("🚗 *Trade-In от ARKEID*\n\nХотите быстро и выгодно продать свой автомобиль?\nЗаполните короткую анкету, и наш менеджер свяжется с вами в течение 15 минут!\n\nНачнем? Какая *марка и модель* вашего авто?", parse_mode="Markdown", reply_markup=kb)
+    await callback.message.answer("🚗 *Trade-In от ARKEID*\n\nХотите быстро и выгодно продать свой автомобиль?\nЗаполните короткую анкету, и наш менеджер свяжется с вами в ближайшее время!\n\nНачнем? Какая *марка и модель* вашего авто?", parse_mode="Markdown", reply_markup=kb)
     await state.set_state(TradeInStates.waiting_for_brand)
 
 @dp.callback_query(F.data.in_({"admin_ok", "admin_no"}))
